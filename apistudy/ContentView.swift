@@ -19,14 +19,25 @@ struct apitest: View {
                 .padding()
                 .background(Color(uiColor: .secondarySystemBackground))
             Button(action: {
-                let parameters: [String: Any] = ["name": name,"email": email]
-                
                 let url = "https://dailynote-e0942-default-rtdb.firebaseio.com/users.json"
-                
-                AF.request(url, method: .post, parameters: parameters, encoding: JSONEncoding())
-                    .response{ response in
-                        debugPrint(response)
+                AF.request(url, method: .get).responseDecodable(of: [String: User].self) { response in
+                    switch response.result {
+                    case .success(let dictionary):
+                        for(_, user) in dictionary {
+                            if user.name == self.name && user.email == self.email {
+                                print("이미 등록된 사용자입니다.")
+                                return
+                            }
+                        }
+                        let parameters: [String: Any] = ["name": name,"email": email]
+                        AF.request(url, method: .post, parameters: parameters, encoding: JSONEncoding.default)
+                            .response{ response in
+                                debugPrint(response)
+                            }
+                    case .failure(_):
+                        print("error")
                     }
+                }
             }, label: {
                 Text("회원가입")
             })
