@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftyJSON
 import Alamofire
 
 struct User: Decodable {
@@ -19,23 +20,12 @@ struct apitest: View {
                 .padding()
                 .background(Color(uiColor: .secondarySystemBackground))
             Button(action: {
-                let url = "https://dailynote-e0942-default-rtdb.firebaseio.com/users.json"
-                AF.request(url, method: .get).responseDecodable(of: [String: User].self) { response in
-                    switch response.result {
-                    case .success(let dictionary):
-                        for(_, user) in dictionary {
-                            if user.name == self.name && user.email == self.email {
-                                print("이미 등록된 사용자입니다.")
-                                return
-                            }
-                        }
-                        let parameters: [String: Any] = ["name": name,"email": email]
-                        AF.request(url, method: .post, parameters: parameters, encoding: JSONEncoding.default)
-                            .response{ response in
-                                debugPrint(response)
-                            }
-                    case .failure(_):
-                        print("error")
+                signup { result in
+                    switch result {
+                    case .success(let result):
+                        print("Fetched data: \(result)")
+                    case .failure(let error):
+                        print("Error fetching data: \(error.localizedDescription)")
                     }
                 }
             }, label: {
@@ -67,6 +57,37 @@ struct apitest: View {
                 }
             }) {
                 Text("Log in")
+            }
+        }
+    }
+    
+    func signup(completion: @escaping (Result<String, Error>) -> Void) {
+        let url = "https://dailynote-e0942-default-rtdb.firebaseio.com/users.json"
+        AF.request(url, method: .get).responseDecodable(of: [String: User].self) { response in
+            switch response.result {
+                // 요청이 성공했을 경우
+            case .success(let dictionary):
+                // 가져온 사용자 정보를 반복하여 확인합니다.
+                for(_, user) in dictionary {
+                    // 입력한 이름과 이메일이 이미 존재하는 사용자의 것과 일치하는지 확인합니다.
+                    if user.name == self.name && user.email == self.email {
+                        // 일치하는 사용자가 있으면 이미 등록된 사용자라는 메시지를 출력하고 종료합니다.
+                        print("이미 등록된 사용자입니다.")
+                        return
+                    }
+                }
+                // 일치하는 사용자가 없으면 해당 이름과 이메일로 새 사용자를 등록합니다.
+                let parameters: [String: Any] = ["name": name,"email": email]
+                print(parameters)
+                AF.request(url, method: .post, parameters: parameters, encoding: JSONEncoding.default)
+                    .response{ response in
+                        // 새 사용자 등록 요청의 결과를 출력합니다.
+                        debugPrint(response)
+                    }
+                // 요청이 실패했을 경우
+            case .failure(let error):
+                // 에러 메시지를 출력합니다.
+                completion(.failure(error))
             }
         }
     }
