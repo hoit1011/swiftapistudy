@@ -9,7 +9,7 @@ struct User: Decodable {
 struct apitest: View {
     @State private var name: String = ""
     @State private var email: String = ""
-    
+    @State private var id: Int = 1;
     var body: some View {
         VStack(spacing: 10){
             TextField("이름을 입력해주세요", text: $name)
@@ -63,7 +63,7 @@ struct apitest: View {
                         return
                     }
                 }
-                let parameters: [String: Any] = ["name": name,"email": email]
+                let parameters: [String: Any] = ["name": name,"email": email,"id":(id += 1)]
                 print(parameters)
                 AF.request(url, method: .post, parameters: parameters, encoding: JSONEncoding.default)
                     .response{ response in
